@@ -348,14 +348,18 @@ const KoshaCrypto = (() => {
   // uneconomic, and the reason to prefer scrypt over a plain
   // iteration count.
   //
-  // Measured at roughly 270 ms in a browser on this machine, which is
-  // what makes meeting the recommendation affordable: an earlier,
-  // allocation-heavy version of the core above took over 15 seconds
-  // at this cost and forced a weaker setting. If you lower this,
-  // lower it knowingly — and note that existing accounts are
-  // unaffected either way, since the server records the cost each one
-  // was created under and the client derives with that (see
-  // api.js's login).
+  // Measured at roughly 270 ms in a browser on a 2024 Mac, which is
+  // what makes meeting the recommendation affordable at all. The
+  // allocation-heavy version of the core above that this replaced ran
+  // about 12x slower on identical input (1.6 s versus 0.14 s at
+  // N=2**16, same runtime, same machine), which would have put this
+  // cost factor well into "every login feels broken" territory and
+  // forced a weaker setting.
+  //
+  // If you lower this, lower it knowingly. Existing accounts are
+  // unaffected either way: the server records the cost each one was
+  // created under and the client derives with that (see api.js's
+  // login), so changing this number only affects new accounts.
   const SCRYPT_N = 2 ** 17;
   const SCRYPT_R = 8;
   const SCRYPT_P = 1;

@@ -151,15 +151,19 @@ It does **not** provide scrypt, so scrypt is implemented from RFC 7914
 The scrypt core is written in an ugly style — sixteen local variables,
 no allocation, a bitwise mask where the spec says modulo — and the
 comments say why at each point. The short version: the readable
-version allocated two objects per Salsa20 call, of which a login makes
-about two million, and measured **15 seconds**. The current one
-measures about **270 milliseconds** at a higher cost factor. Same
-algorithm, same output, verified against the standard.
+version allocated two objects per Salsa20 call, of which a single
+login makes about two million. On identical input, same runtime and
+same machine, the readable version took **1.6 s** where this one takes
+**0.14 s** — about 12× — and in the browser a sign-in went from
+unusable to roughly **270 ms**. Same algorithm, same output, verified
+against RFC 7914's vectors before and after.
 
 That speed is what let the cost factor be set to OWASP's actual
 recommended minimum (N = 2¹⁷, which costs an attacker 128 MB per
 guess) rather than the weaker setting a slow implementation would have
-forced.
+forced. The same tradeoff is visible in Haven, which still carries the
+earlier implementation and sets N = 2¹⁶ with a comment explaining that
+2¹⁷ was too slow to be bearable — it was, for that code.
 
 The key hierarchy:
 
