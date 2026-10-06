@@ -1,0 +1,10 @@
+# Kosha's server dependencies — deliberately four packages.
+#
+# There is no ORM, no migration framework, no task queue and no cache:
+# the server stores opaque bytes and checks one password hash, and
+# every one of those tools exists to manage structure this server is
+# specifically designed not to have.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+argon2-cffi>=23.1
+pydantic>=2.6

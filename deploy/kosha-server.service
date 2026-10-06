@@ -1,0 +1,23 @@
+# systemd unit, for running Kosha on a Linux box instead of a Mac.
+#
+#   sudo cp deploy/kosha-server.service /etc/systemd/system/
+#   sudo systemctl enable --now kosha-server
+#
+# Adjust User, WorkingDirectory and the python path to match your setup.
+[Unit]
+Description=Kosha encrypted store
+After=network.target
+
+[Service]
+Type=simple
+User=saideep
+WorkingDirectory=/home/saideep/kosha
+Environment=KOSHA_DATA_DIR=/home/saideep/.kosha
+# Loopback only — Tailscale provides the reachability, and binding
+# wider would expose the service to the local network too.
+ExecStart=/usr/bin/python3 -m uvicorn server.server:app --host 127.0.0.1 --port 8711
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

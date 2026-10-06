@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kosha</title>
+<meta name="description" content="An encrypted database and filing system that only you can read.">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kosha">
+<meta property="og:description" content="An encrypted database and filing system that only you can read.">
+<meta name="theme-color" content="#faf7f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17140f" media="(prefers-color-scheme: dark)">
+
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/kosha.css?v=2">
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="login-screen">
+  <div class="login-card">
+
+    <!-- The masthead: oversized serif wordmark, hairline rule, tracked
+         kicker. Same treatment as the other tools in this family. -->
+    <header class="masthead">
+      <h1 class="wordmark">Kosha</h1>
+      <hr class="rule">
+      <p class="kicker">Encrypted Store &middot; Zero Knowledge</p>
+    </header>
+
+    <div class="login-panel">
+      <div class="login-tabs" role="tablist">
+        <button id="tab-signin" class="active" role="tab">Sign in</button>
+        <button id="tab-signup" role="tab">Create account</button>
+        <button id="tab-recover" role="tab">Forgot password</button>
+      </div>
+
+      <!-- Sign in -->
+      <form id="form-signin" autocomplete="on">
+        <label class="field">
+          <span class="label-text">Username</span>
+          <input id="signin-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        </label>
+        <label class="field">
+          <span class="label-text">Password</span>
+          <input id="signin-password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="primary" style="width:100%">Sign in<span class="spinner"></span></button>
+      </form>
+
+      <!-- Create account -->
+      <form id="form-signup" hidden autocomplete="on">
+        <label class="field">
+          <span class="label-text">Username</span>
+          <input id="signup-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+          <span class="hint">3&ndash;24 characters: letters, numbers and underscores, starting with a letter.</span>
+        </label>
+        <label class="field">
+          <span class="label-text">Password</span>
+          <input id="signup-password" type="password" autocomplete="new-password" required>
+          <span class="hint">This is the only thing that can decrypt your data. There is no master key and no way to reset it from our side &mdash; choose something long, and write it down somewhere safe.</span>
+        </label>
+        <label class="field">
+          <span class="label-text">Password again</span>
+          <input id="signup-password2" type="password" autocomplete="new-password" required>
+        </label>
+        <button type="submit" class="primary" style="width:100%">Create account<span class="spinner"></span></button>
+      </form>
+
+      <!-- Recover -->
+      <form id="form-recover" hidden>
+        <p class="note accent" style="margin-bottom:16px">
+          Your password cannot be looked up or reset by anyone &mdash; not even by whoever runs this
+          server, because they never had it. The twelve-word phrase you were shown at signup is the
+          only other key to your vault.
+        </p>
+        <label class="field">
+          <span class="label-text">Username</span>
+          <input id="recover-username" type="text" autocapitalize="none" spellcheck="false" required>
+        </label>
+        <label class="field">
+          <span class="label-text">Recovery phrase</span>
+          <textarea id="recover-phrase" rows="3" spellcheck="false" placeholder="twelve words, separated by spaces" required></textarea>
+        </label>
+        <label class="field">
+          <span class="label-text">New password</span>
+          <input id="recover-password" type="password" autocomplete="new-password" required>
+        </label>
+        <button type="submit" class="primary" style="width:100%">Reset password<span class="spinner"></span></button>
+      </form>
+
+      <div id="login-status" class="login-status" role="status" aria-live="polite"></div>
+    </div>
+
+    <p class="login-foot">
+      Everything is encrypted in this browser before it is sent.<br>
+      The server stores bytes it has no way to read.
+    </p>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app-screen" hidden>
+
+  <header id="topbar">
+    <div class="masthead small">
+      <div class="wordmark">Kosha</div>
+      <hr class="rule">
+      <div class="kicker">Encrypted Store</div>
+    </div>
+
+    <nav id="tabs">
+      <button data-view="files" class="active">Files</button>
+      <button data-view="tables">Tables</button>
+      <button data-view="query">Query</button>
+      <button data-view="settings">Settings</button>
+    </nav>
+
+    <div id="save-state" title="Your vault is encrypted here and uploaded as one opaque blob."></div>
+    <span class="kicker-label" id="who"></span>
+    <button id="btn-logout" class="ghost tiny">Sign out</button>
+  </header>
+
+  <div id="main">
+    <aside id="sidebar">
+      <div class="sidebar-head">
+        <span class="kicker-label">Folders</span>
+        <button id="btn-new-folder" class="tiny">New</button>
+      </div>
+      <div class="sidebar-body" id="folder-tree"></div>
+      <div class="sidebar-foot" id="sidebar-stats"></div>
+    </aside>
+
+    <main id="content"></main>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<div id="busy" hidden>
+  <div class="busy-ring"></div>
+  <div class="busy-text" id="busy-text">Working</div>
+</div>
+
+<!-- SQLite, compiled to WebAssembly, served from this origin. Both
+     this and the .wasm beside it are vendored into the repo: no CDN
+     at runtime, so the page works offline and the CSP can honestly
+     say connect-src 'self'. -->
+<script src="vendor/sql-wasm.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+
+<script src="js/crypto.js?v=2"></script>
+<script src="js/scrypt-worker-client.js?v=2"></script>
+<script src="js/api.js?v=2"></script>
+<script src="js/engine.js?v=2"></script>
+<script src="js/convert.js?v=2"></script>
+<script src="js/vault.js?v=2"></script>
+<script src="js/ui.js?v=2"></script>
+<script src="js/views-files.js?v=2"></script>
+<script src="js/views-data.js?v=2"></script>
+<script src="js/app.js?v=2"></script>
+</body>
+</html>

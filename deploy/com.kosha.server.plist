@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Keeps the Kosha server running and restarts it if it dies or the
+     machine reboots. Install with:
+
+       cp deploy/com.kosha.server.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.kosha.server.plist
+
+     Edit the paths below if the repository lives somewhere else. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.kosha.server</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>-m</string>
+        <string>uvicorn</string>
+        <string>server.server:app</string>
+        <string>--host</string>
+        <!-- Bound to loopback on purpose. Tailscale is what makes this
+             reachable from your other devices; binding to 0.0.0.0 would
+             also expose it to whatever café Wi-Fi you are on. -->
+        <string>127.0.0.1</string>
+        <string>--port</string>
+        <string>8711</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/saideep/Developer/kosha</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+        <!-- Where accounts, encrypted vaults and encrypted blobs live.
+             This directory IS your data: back it up, and note that a
+             backup of it is useless to anyone without your password. -->
+        <key>KOSHA_DATA_DIR</key>
+        <string>/Users/saideep/.kosha</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/saideep/Library/Logs/Kosha/server.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/saideep/Library/Logs/Kosha/server.err.log</string>
+</dict>
+</plist>

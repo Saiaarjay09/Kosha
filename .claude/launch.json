@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "kosha",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "server.server:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8711"
+      ],
+      "port": 8711
+    }
+  ]
+}
