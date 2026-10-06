@@ -14,7 +14,11 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/bin/python3</string>
+        <!-- The framework python3, not /usr/bin/python3: that is
+             Apple's system build and does not have fastapi
+             installed. `which python3` is what to check if this
+             agent starts and immediately dies. -->
+        <string>/Library/Frameworks/Python.framework/Versions/3.14/bin/python3</string>
         <string>-m</string>
         <string>uvicorn</string>
         <string>server.server:app</string>

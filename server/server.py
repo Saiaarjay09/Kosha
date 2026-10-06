@@ -491,6 +491,22 @@ def garbage_collect(keep: list[str] = Body(embed=True), username: str = Depends(
     return {"removed": removed}
 
 
+@app.get("/api/keyring")
+def keyring(username: str = Depends(current_user)) -> dict:
+    """Both wrapped copies of the master key, for an export.
+
+    Safe to serve to an authenticated session: these are 60 opaque
+    bytes each, and the only things that open them are the password
+    and the recovery phrase, neither of which this server has. The
+    recovery wrapper is normally fetched via /api/recovery-keyring
+    behind a phrase proof — that gate exists so a stranger cannot
+    harvest wrappers by guessing usernames, not because a wrapper is
+    secret from its own owner.
+    """
+    row = store.get_account(username)
+    return {"keyring_password": row["keyring_password"], "keyring_recovery": row["keyring_recovery"]}
+
+
 @app.get("/api/usage")
 def usage(username: str = Depends(current_user)) -> dict:
     return store.stats(username)
