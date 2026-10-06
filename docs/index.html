@@ -113,14 +113,39 @@
 
   <div class="panel">
     <h2>Open Kosha</h2>
-    <!-- Kept here rather than only in a chat message so there is one
-         address that is always right. Updated by deploy/publish-links.sh
-         whenever the hostname changes. -->
-    <a class="open-link" id="app-link" href="https://kosha.taila6d3cb.ts.net">https://kosha.taila6d3cb.ts.net</a>
+    <a class="open-link" href="app/">Open Kosha &rarr;</a>
+    <p class="note accent" style="margin-top:14px">
+      This copy runs entirely in your browser and needs no server at all &mdash; it works with every
+      machine switched off, and nothing you put in it ever leaves your device. The catch is that the
+      vault lives in <em>this</em> browser: it does not sync, and clearing your site data erases it.
+      Export a backup from Settings once you have anything worth keeping.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Or the synced copy</h2>
+    <a class="open-link" id="app-link" href="https://haven.taila6d3cb.ts.net:8912">https://haven.taila6d3cb.ts.net:8912</a>
     <p class="note" style="margin-top:14px">
-      That address lives on a private Tailscale network. It opens on any device signed in to
-      that tailnet, and is invisible to everyone else — which is why this page, not the app,
-      is the part that is always reachable.
+      The same app, backed by a small server on a private Tailscale network. Everything you store is
+      shared across every device you sign in from &mdash; but only while that machine is awake, and only
+      for devices on that tailnet. Invisible to everyone else, which is why this page, not the app, is
+      the part that is always reachable.
+    </p>
+  </div>
+
+  <div class="panel">
+    <h2>Which one should I use?</h2>
+    <dl class="facts">
+      <div><dt>Works with my computer off</dt><dd>Browser copy</dd></div>
+      <div><dt>Same data on my laptop and phone</dt><dd>Tailscale copy</dd></div>
+      <div><dt>Nothing ever leaves the device</dt><dd>Browser copy</dd></div>
+      <div><dt>Survives clearing browser data</dt><dd>Tailscale copy</dd></div>
+      <div><dt>Reachable from anywhere</dt><dd>Browser copy</dd></div>
+    </dl>
+    <p class="note" style="margin-top:16px">
+      You are not locked into either. Settings has an encrypted export that moves a vault between
+      them &mdash; every byte in that file is already encrypted, so it is exactly as safe as the
+      password that opens it, and no safer.
     </p>
   </div>
 
@@ -173,13 +198,15 @@
   </div>
 
   <h3>Run your own</h3>
-  <pre><code>git clone https://github.com/Saiaarjay09/kosha.git
-cd kosha
+  <pre><code>git clone https://github.com/Saiaarjay09/Kosha.git
+cd Kosha
 pip3 install -r requirements.txt
 python3 -m uvicorn server.server:app --port 8711
 
 # then put it on your tailnet:
-./deploy/setup-tailscale.sh serve</code></pre>
+./deploy/setup-tailscale.sh serve
+
+# ...or skip all of that and just open docs/app/index.html</code></pre>
   <p class="note">
     Everything is self-hosted and there are no third-party services, no API keys and no
     accounts anywhere but your own machine. The only outside code is SQLite and a spreadsheet
@@ -188,7 +215,7 @@ python3 -m uvicorn server.server:app --port 8711
 
   <footer>
     Kosha &middot; <span style="font-family:var(--font-mono)">कोश</span> — a treasury, a repository<br>
-    <a href="https://github.com/Saiaarjay09/kosha">Source on GitHub</a>
+    <a href="https://github.com/Saiaarjay09/Kosha">Source on GitHub</a>
   </footer>
 
 </main>

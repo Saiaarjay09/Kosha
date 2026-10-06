@@ -1,27 +1,42 @@
 # Where Kosha is
 
-Two addresses, doing different jobs.
+Two addresses, doing different jobs. Both run the same application.
 
-**The app** — https://kosha.taila6d3cb.ts.net
+## The browser copy — always up
 
-Lives on your tailnet. It opens on any device signed in to that
-tailnet and is invisible to everyone else, which is the right default
-for a private data store. It is only up while the machine hosting it
-is awake and online.
+**https://saiaarjay09.github.io/Kosha/**
 
-**The always-on page** — https://saiaarjay09.github.io/kosha/
+A static site on GitHub Pages. It needs no server, works offline, and
+works with every machine you own switched off. The encrypted vault
+lives in that browser's own storage, so it does not sync between
+devices and clearing your site data erases it — export a backup from
+Settings once there is anything worth keeping.
 
-A public, static GitHub Pages site that is up regardless of whether
-the server is. It explains what Kosha is and carries the current app
-address, so there is one link worth bookmarking even when the app
-itself is asleep.
+## The synced copy — while this Mac is awake
+
+**https://haven.taila6d3cb.ts.net:8912**
+
+The same app with a small server behind it, published to your tailnet
+only (`tailscale serve`, not `funnel`) — so it is reachable from your
+own signed-in devices and invisible to everyone else. Data is shared
+across every device you sign in from.
+
+Served by the `com.kosha.server` launchd agent on port 8711, proxied by
+Tailscale on 8912. Check it with:
+
+```
+launchctl list | grep kosha
+curl -s https://haven.taila6d3cb.ts.net:8912/api/health
+```
 
 ---
 
-If the hostname ever changes — a renamed machine, a new tailnet — run
-`./deploy/publish-links.sh`, which re-derives it from Tailscale and
-updates both this file and the Pages site in one commit. Don't edit
-the URLs here by hand; that script will overwrite them.
+Settings → **Export encrypted vault file** moves a vault between the
+two. Every byte in that file is already encrypted.
 
-See [README.md](README.md) for setup and [ARCHITECTURE.md](ARCHITECTURE.md)
-for how the code fits together.
+If the tailnet hostname ever changes, run `./deploy/publish-links.sh`,
+which re-derives it and updates this file and the Pages site together.
+Don't edit the URLs by hand; that script overwrites them.
+
+See [README.md](README.md) for setup and
+[ARCHITECTURE.md](ARCHITECTURE.md) for how the code fits together.

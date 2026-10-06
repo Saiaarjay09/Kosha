@@ -27,6 +27,31 @@ What that leaves on each side:
 - **The browser** (`static/`) does the key derivation, the decryption,
   the SQL, the format conversion and the entire user interface.
 
+### Two deployments, one codebase
+
+Once the server has been reduced that far, an obvious question
+follows: does it need to exist at all? For one of the two deployments,
+no.
+
+- **Server mode** — the Python process above, reachable over
+  Tailscale. The vault lives there, so every device you sign in from
+  sees the same data, at the cost of that machine being awake.
+- **Local mode** — no server. The identical ciphertext goes into the
+  browser's own IndexedDB (`static/js/store-local.js`), which is what
+  lets the whole app be served from GitHub Pages and keep working with
+  every machine switched off. The vault then lives on that one device
+  and does not sync.
+
+The mode is **detected, not configured**: the page asks its own origin
+for `api/health` and checks the answer is actually Kosha's. A static
+host has no such endpoint, so Pages lands in local mode by itself and
+a Tailscale deployment lands in server mode by itself. There is no
+build flag and no second copy of the app to keep in step.
+
+`static/js/api.js` is the seam. Everything above it — the vault, the
+engine, the conversions, the UI — is identical in both modes and does
+not know which one it is in.
+
 ### The journey of one file
 
 Worth following once end to end, because it touches nearly every file:
@@ -207,6 +232,33 @@ random master key, wrap it twice, send the server the salts, the two
 auth proofs and the two wrapped copies. The server receives nothing
 that can unwrap either.
 
+### `store-local.js`
+
+The browser-only storage backend: the same handful of operations the
+server offers — get and put the vault, get, put and delete a blob,
+report usage — implemented over IndexedDB.
+
+Nothing here touches a key or a plaintext. It stores the exact
+ciphertext the server would have stored, produced by the exact same
+code; swapping backends changes where encrypted bytes come to rest and
+nothing else.
+
+Two details are deliberately carried over from the server rather than
+simplified away. `putVault` does the same compare-and-swap on a version
+counter, because two tabs of a local vault is just as real a situation
+as two tabs of a hosted one, and losing the first tab's work silently
+would be just as bad. And `importAccount` preserves blob ids rather
+than reassigning them — the vault database arriving in the same bundle
+refers to files by id, so renumbering would break every one of those
+references.
+
+The export/import bundle it produces is the bridge between the two
+deployments, and the only backup a browser-stored vault has. Browsers
+evict IndexedDB — Safari after seven days without a visit, any browser
+under storage pressure — so `requestPersistence` asks for exemption,
+which browsers grant on engagement. It is a request, not a guarantee,
+which is why Settings says so plainly instead of quietly hoping.
+
 ### `engine.js`
 
 The SQLite wrapper. Real SQLite, compiled to WebAssembly, served from
@@ -349,8 +401,18 @@ user cannot check is worth very little.
 the public internet by default. `funnel` is available and the script
 says what it costs before doing it.
 
-`docs/` is a standalone GitHub Pages site with no shared stylesheet,
-no scripts and no external fonts. It is the one part of Kosha that is
-always up, so it should have nothing in it that can fail.
-`publish-links.sh` re-derives the tailnet hostname and updates that
-page only when it has actually changed.
+`docs/` is the GitHub Pages site: a standalone landing page with no
+shared stylesheet, no scripts and no external fonts, plus `docs/app/`,
+a copy of `static/` so the application itself is served there too.
+
+`build-pages.sh` makes that copy. It does not build anything, because
+there is nothing to build — `static/` is the single source of truth,
+`docs/app/` is generated from it, marked as such with a
+`GENERATED.txt`, and never edited by hand. The script also drops a
+`.nojekyll`: Jekyll silently ignores paths beginning with an
+underscore, and one missing file in a deployed site is miserable to
+diagnose.
+
+`publish-links.sh` re-derives the tailnet hostname and updates the
+landing page and `CURRENT_LINKS.md` together, only when it has
+actually changed.

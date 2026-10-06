@@ -2,8 +2,13 @@
 
 **कोश** — a treasury, a repository, the sheath a thing is kept in.
 
-A database and a filing system in one, where the server holds only
-bytes it cannot read.
+A database and a filing system in one, where nothing that stores your
+data can read it.
+
+### → **[Open Kosha](https://saiaarjay09.github.io/Kosha/)** ←
+
+That link always works. It runs entirely in your browser, needs no
+server, and keeps working with every machine you own switched off.
 
 ---
 
@@ -69,25 +74,39 @@ that is what you will find if you search for it.
 
 Your password is turned into **two independent keys**.
 
-One (`authKey`) is sent to the server, which uses it only to decide
-whether to let you in. The other (`encKey`) never leaves your browser,
-and it is the only thing in the world that can decrypt your vault.
-Neither can be computed from the other — that is HKDF's guarantee, and
-the whole design rests on it.
+One (`authKey`) is a login proof. The other (`encKey`) never leaves
+your browser, and it is the only thing in the world that can decrypt
+your vault. Neither can be computed from the other — that is HKDF's
+guarantee, and the whole design rests on it.
 
 `encKey` does not encrypt your data directly. It unwraps a random
-32-byte **master key**, stored on the server wrapped under `encKey`,
-and separately wrapped under a key derived from your 12-word recovery
-phrase. The indirection is what makes changing your password instant:
-only the 60-byte wrapper is replaced, not a single byte of your data.
+32-byte **master key**, stored wrapped under `encKey` and separately
+wrapped under a key derived from your 12-word recovery phrase. The
+indirection is what makes changing your password instant: only the
+60-byte wrapper is replaced, not a single byte of your data.
 
-So the server holds an encrypted SQLite database, a pile of encrypted
-files, and two wrapped keys it cannot unwrap. That is also *why* SQL
-runs in your browser: a server able to index or filter your rows would
-be a server able to read them. There is no query endpoint in this API,
-and there cannot be one.
+So what gets stored — on a server, or in your browser's own storage —
+is an encrypted SQLite database, a pile of encrypted files, and two
+wrapped keys that nothing there can unwrap.
 
-### What the server can and cannot see
+That is also *why* SQL runs in your browser: anything able to index or
+filter your rows would be able to read them. There is no query
+endpoint in this API, and there cannot be one. It is the same reason
+the browser-only deployment was possible at all — once the engine is
+already client-side, the server has so little left to do that it can
+be removed entirely.
+
+### In the browser copy
+
+Nothing is sent anywhere, because there is nowhere to send it. The
+encrypted vault goes into IndexedDB on your own device.
+
+There is not even a stored password hash: with no server to prove
+anything to, AES-GCM failing to unwrap your keyring **is** the
+password check — and a better one, because there is no separate hash
+sitting around for an attacker to grind against.
+
+### In the hosted copy: what the server can and cannot see
 
 | | |
 |---|---|
@@ -105,17 +124,24 @@ than take this on faith.
 
 ### The honest caveat
 
-The app's code is delivered by that same server on every page load. A
-server that is compromised **before** you log in can serve you altered
-JavaScript, and no amount of client-side encryption protects you from
-that. This is true of every browser-delivered encryption tool, Kosha
-included. Zero-knowledge storage is a real and worthwhile property; it
-is not a defence against a hostile server rewriting the client.
+Whatever serves you this page — your own machine, or GitHub Pages —
+delivers the app's code fresh on every load. Something that is
+compromised **before** you log in can serve you altered JavaScript,
+and no amount of client-side encryption protects you from that. This
+is true of every browser-delivered encryption tool, Kosha included.
+Zero-knowledge storage is a real and worthwhile property; it is not a
+defence against a hostile host rewriting the client.
 
-The practical mitigations, such as they are: run it yourself, keep it
-on your own tailnet rather than the public internet, and note that
-`connect-src 'self'` in the Content-Security-Policy means the page is
-not permitted to talk to any other host at all.
+The practical mitigations, such as they are: run it yourself, keep the
+hosted copy on your own tailnet rather than the public internet, and
+note that `connect-src 'self'` in the Content-Security-Policy means the
+page may not contact any other host at all — so even a bug in Kosha's
+own code cannot send a decrypted row somewhere else.
+
+Worth being precise about one thing: the browser-only copy removes the
+*storage* side of this risk entirely — there is no server holding your
+data to be breached — but not the *delivery* side, since GitHub still
+serves the page. Fewer moving parts, not zero.
 
 ### What it will not do
 
@@ -124,27 +150,57 @@ gone. Not "contact support" gone — gone, because nobody else ever held
 anything that could decrypt it. That is the cost of the guarantee, and
 it is not negotiable.
 
-## Running it
+## Two ways to run it
+
+Kosha is the same application either way — identical code, identical
+encryption. The only thing that differs is where the encrypted bytes
+come to rest, and the app works out which deployment it is in by
+itself.
+
+### 1. In your browser, no server at all
+
+**[saiaarjay09.github.io/Kosha](https://saiaarjay09.github.io/Kosha/)**
+
+Nothing to install, nothing to run, no account on anybody's machine.
+The encrypted vault goes into your browser's own storage (IndexedDB),
+which means this copy works offline, works with every computer you own
+switched off, and never sends a single byte anywhere — there is no
+server to compromise, which removes the one real caveat the hosted
+version has to admit to.
+
+What you give up, and it is not small: **the vault lives in that
+browser on that device.** It does not sync. Open it on your phone and
+you get a separate, empty vault. Clear your browser's site data and it
+is gone. Safari also evicts storage for sites you have not visited in
+seven days. That is why Settings has an encrypted export — it is the
+only backup this copy has, and the only way to move it to another
+device. Use it.
+
+### 2. On your own machine, synced across devices
 
 ```bash
-git clone https://github.com/Saiaarjay09/kosha.git
-cd kosha
+git clone git@github.com:Saiaarjay09/Kosha.git
+cd Kosha
 pip3 install -r requirements.txt
 python3 -m uvicorn server.server:app --host 127.0.0.1 --port 8711
 ```
 
-Open http://localhost:8711 and create an account.
+Open http://localhost:8711. One process serves both the page and the
+API on one port, so there is no second service to start and no URL to
+configure.
 
-One process serves both the page and the API on one port, so there is
-no second service to start and no URL to configure.
+Everything you store is now shared across every device you sign in
+from — at the cost of that machine needing to be awake, and of there
+being a server at all (which still cannot read your data, but could in
+principle serve you altered code; see the caveat above).
 
-### On your tailnet
+To reach it from your other devices, put it on your tailnet:
 
 ```bash
 ./deploy/setup-tailscale.sh serve
 ```
 
-That publishes Kosha to devices signed in to **your** tailnet only —
+That publishes it to devices signed in to **your** tailnet only —
 invisible to everyone else, which is the right default for a private
 data store. Pass `funnel` instead of `serve` to put it on the public
 internet; the script says what that costs you before it does it.
@@ -158,11 +214,28 @@ launchctl load ~/Library/LaunchAgents/com.kosha.server.plist
 
 (`deploy/kosha-server.service` is the systemd equivalent for Linux.)
 
-Because the tailnet app is only up while that machine is awake, there
-is also an always-on public page at
-[saiaarjay09.github.io/kosha](https://saiaarjay09.github.io/kosha/)
-(the `docs/` directory) that explains Kosha and carries the current
-address. `deploy/publish-links.sh` keeps it accurate.
+### Moving between the two
+
+Settings → **Export encrypted vault file** produces one file holding
+your vault database and every stored file, all still encrypted. Import
+it on the other side and everything comes back, including the links
+between files and their SQL tables.
+
+Every byte in that file is ciphertext — it is exactly as safe as the
+password that opens it, and no safer. Treat it the way you would treat
+a password manager export.
+
+### Rebuilding the browser copy
+
+`static/` is the only copy of the app. `docs/app/` is generated from it
+for GitHub Pages and should never be edited by hand:
+
+```bash
+./deploy/build-pages.sh
+```
+
+Then commit `docs/` and push. Pages is configured to serve the `main`
+branch's `/docs` folder.
 
 ### Tests
 
@@ -184,13 +257,15 @@ server/        the API — about 500 lines, and deliberately dull
   vault_db.py    every byte the server keeps, with reasoning
   server.py      request shapes, rate limiting, sessions, static files
 static/        the app itself (no build step, no framework)
-  js/crypto.js   scrypt, HKDF, AES-GCM, the split-key derivation
-  js/engine.js   SQLite-in-WebAssembly
-  js/convert.js  format detection and conversion
-  js/vault.js    folders, files, and encrypted sync
-  vendor/        SQLite and a spreadsheet reader, vendored not CDN'd
-docs/          the always-on GitHub Pages site
-deploy/        Tailscale, launchd, systemd
+  js/crypto.js      scrypt, HKDF, AES-GCM, the split-key derivation
+  js/engine.js      SQLite-in-WebAssembly
+  js/convert.js     format detection and conversion
+  js/vault.js       folders, files, and encrypted sync
+  js/store-local.js the browser-only storage backend
+  js/api.js         picks a backend and runs the account flows
+  vendor/           SQLite and a spreadsheet reader, vendored not CDN'd
+docs/          the GitHub Pages site: landing page + a copy of the app
+deploy/        Tailscale, launchd, systemd, the Pages build
 tests/         crypto vectors and server behaviour
 ```
 
@@ -215,6 +290,10 @@ tests/         crypto vectors and server behaviour
   is told to reload rather than allowed to silently overwrite the
   first. That is the right failure for a database, but it is a failure,
   not a merge.
+- **The browser copy does not sync, and browsers evict storage.** It is
+  genuinely private and genuinely always-available, but it is one
+  device's copy with no server behind it. The export file is not
+  optional there.
 
 ## No third-party services
 
